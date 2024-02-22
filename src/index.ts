@@ -1,53 +1,39 @@
-import yup, {ValidationError} from "yup";
+import yup from "yup";
 import React from "react";
 import {makeAutoObservable, makeObservable, observable} from "mobx";
 
-export enum ValidateOn {
+export enum ValidateOnFlags {
     Never = 0,
     Blur = 1 << 0,
     Change = 1 << 1,
     Submit = 1 << 2,
-    Always = ~(~0 << 3)
+    Always = ~(-1 << 3)
 }
 
-export type ConditionalSchema<T> = T extends string
-    ? yup.StringSchema
-    : T extends number
-        ? yup.NumberSchema
-        : T extends boolean
-            ? yup.BooleanSchema
-            : T extends Record<any, any>
-                ? yup.AnyObjectSchema
-                : T extends Array<any>
-                    ? yup.ArraySchema<any, any>
-                    : yup.AnySchema;
+export class FormValidator<T extends Object> {
 
-export type Shape<F> = {
-    [K in keyof F]: ConditionalSchema<F[K]>;
-};
-
-export class FormValidator<T> {
-
-    _keys: string[] = [];
-    errors = new Map<string, string>()
+    private _keys: Array<keyof T> = [];
     private _yupSchema: yup.ObjectSchema<any>;
+    private _defaults: T;
+    private _submitCallback: (values: T) => void;
+    private _validateFlags: ValidateOnFlags;
 
-    _defaults: T;
+    errors = new Map<keyof T, string>()
     values: T;
-    _submitCallback: (values: T) => void;
-    _validateFlags: ValidateOn;
-
 
     constructor(
         defaults: T,
         submitCallback: (values: T) => void,
         yupSchema: yup.ObjectSchema<any>,
-        validateOn: ValidateOn) {
-        makeAutoObservable(this)
+        validateOn: ValidateOnFlags = ValidateOnFlags.Blur | ValidateOnFlags.Submit) {
+
 
         this.handleBlur = this.handleBlur.bind(this);
+        this.handleChange = this.handleChange.bind(this);
         this.handleSubmit = this.handleSubmit.bind(this);
-        this._hasErrors = this._hasErrors.bind(this);
+        this.hasErrors = this.hasErrors.bind(this);
+        this.hasError = this.hasError.bind(this);
+        this.getError = this.getError.bind(this);
 
         this._validateFlags = validateOn;
 
@@ -56,29 +42,46 @@ export class FormValidator<T> {
         this.values = {...defaults};
         this._submitCallback = submitCallback;
 
-        // @ts-ignore: FIXME
-        this._keys = Object.keys(defaults) as Array<typeof T>;
-        this._keys.forEach((key) => {
+        this._keys = Object.keys(defaults) as Array<keyof T>;
+        for(let key of this._keys){
             this.errors.set(key, "");
-        })
+        }
+        makeAutoObservable(this)
     }
 
-    reset() {
+    setError(field: keyof T, value: string){
+        this.errors.set(field, value);
+    }
+
+    getError(field: keyof T): string{
+        return this.errors.get(field) || "";
+    }
+
+    hasError(field: keyof T): boolean{
+        return this.errors.get(field) !== "";
+    }
+
+    getValue(field: keyof T ){
+        return this.values[field];
+    }
+
+    setValue<K extends keyof T>(field: K, value: T[K] ){
+        this.values[field] = value;
+    }
+
+    resetForm() {
         this.values = {...this._defaults};
-        for (let key of this.keys) {
+        for(let key of this._keys){
+            this.values[key] = this._defaults[key as keyof T]
             this.errors.set(key, "");
         }
     }
 
     get keys() {
-        let keys: string[] = [];
-        for (let key in this._keys) {
-            keys.push(this._keys[key]);
-        }
-        return keys;
+        return [...this._keys];
     }
 
-    _hasErrors(): boolean {
+    hasErrors(): boolean {
         for (let [key, value] of this.errors) {
             if (value !== "")
                 return true;
@@ -87,46 +90,47 @@ export class FormValidator<T> {
     }
 
     async handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-        if ((this._validateFlags & ValidateOn.Submit) === ValidateOn.Submit) {
-            await this._validateAll()
+        if ((this._validateFlags & ValidateOnFlags.Submit) === ValidateOnFlags.Submit) {
+            await this.validateAll()
         }
-        if (!this._hasErrors()) {
-            this._submitCallback(this.values)
+
+        if (!this.hasErrors()) {
+            this._submitCallback({...this.values})
         }
     }
 
-    async handleBlur(e: React.FocusEvent<any>) {
-        let key = e.currentTarget.name;
-        let val = e.currentTarget.value;
-        if ((this._validateFlags & ValidateOn.Blur) === ValidateOn.Blur) {
-            await this._validateAt(key, val)
+    async handleBlur<K extends keyof T>(e: React.FocusEvent<HTMLInputElement>) {
+        let key = e.currentTarget.name as K;
+        let val = e.currentTarget.value as T[K];
+        if ((this._validateFlags & ValidateOnFlags.Blur) === ValidateOnFlags.Blur) {
+            await this.validateAt(key, val)
         }
     }
 
-    async handleChange(e: React.FormEvent<HTMLFormElement>) {
-        let key = e.currentTarget.name;
-        let val = e.currentTarget.value;
-        this.values[key as keyof T] = val;
-        if ((this._validateFlags & ValidateOn.Change) === ValidateOn.Change) {
-            await this._validateAt(key, val)
+    async handleChange<K extends keyof T>(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
+        let key = e.currentTarget.name as K;
+        let val = e.currentTarget.value as T[K];
+        this.setValue(key, val);
+        if ((this._validateFlags & ValidateOnFlags.Change) === ValidateOnFlags.Change) {
+            await this.validateAt(key, val)
         }
     }
 
-    async _validateAt(key: string, value: any): Promise<void> {
+    async validateAt<K extends keyof T>(key: K, value: T[K]): Promise<void> {
         try {
             const obj = {
                 [key]: value,
             }
-            await this._yupSchema.validateAt(key, obj)
-            this.errors.set(key, "")
+            await this._yupSchema.validateAt(key as string, obj)
+            this.setError(key, "")
         } catch (err: any) {
-            this.errors.set(key, err.errors[0])
+            this.setError(key, err.errors[0])
         }
     }
 
-    async _validateAll() {
-        for (const key of this.keys) {
-            await this._validateAt(key, this.values[key as keyof T])
+    async validateAll() {
+        for (const key of this._keys) {
+            await this.validateAt(key as keyof T, this.getValue(key))
         }
     }
 }
