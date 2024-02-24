@@ -28,9 +28,9 @@ export class FormValidator<T extends Object> {
         validateOn: ValidateOnFlags = ValidateOnFlags.Blur | ValidateOnFlags.Submit) {
 
 
-        this.handleBlur = this.handleBlur.bind(this);
-        this.handleChange = this.handleChange.bind(this);
-        this.handleSubmit = this.handleSubmit.bind(this);
+        this.onBlur = this.onBlur.bind(this);
+        this.onChange = this.onChange.bind(this);
+        this.onSubmit = this.onSubmit.bind(this);
         this.hasErrors = this.hasErrors.bind(this);
         this.hasError = this.hasError.bind(this);
         this.getError = this.getError.bind(this);
@@ -88,7 +88,7 @@ export class FormValidator<T extends Object> {
         return false;
     }
 
-    async handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    async onSubmit(e: React.FormEvent<HTMLFormElement>) {
         if ((this._validateFlags & ValidateOnFlags.Submit) === ValidateOnFlags.Submit) {
             await this.validateAll()
         }
@@ -98,7 +98,7 @@ export class FormValidator<T extends Object> {
         }
     }
 
-    async handleBlur<K extends keyof T>(e: React.FocusEvent<HTMLInputElement>) {
+    async onBlur<K extends keyof T>(e: React.FocusEvent<HTMLInputElement>) {
         let key = e.currentTarget.name as K;
         let val = e.currentTarget.value as T[K];
         if ((this._validateFlags & ValidateOnFlags.Blur) === ValidateOnFlags.Blur) {
@@ -106,7 +106,7 @@ export class FormValidator<T extends Object> {
         }
     }
 
-    async handleChange<K extends keyof T>(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
+    async onChange<K extends keyof T>(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
         let key = e.currentTarget.name as K;
         let val = e.currentTarget.value as T[K];
         this.setValue(key, val);

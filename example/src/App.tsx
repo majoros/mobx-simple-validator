@@ -63,8 +63,8 @@ const App: React.FC = () => {
                                 error={validator.hasError("name")}
                                 helperText={validator.getError("name")}
                                 value={validator.getValue("name")}
-                                onChange={async (e) => { await validator.handleChange(e); }}
-                                onBlur={async (e: any) => { await validator.handleBlur(e); }}
+                                onChange={async (e) => { await validator.onChange(e); }}
+                                onBlur={async (e: any) => { await validator.onBlur(e); }}
                                 name={"name"}
                                 label="Name"
                             />
@@ -75,8 +75,8 @@ const App: React.FC = () => {
                                 error={validator.hasError("address")}
                                 helperText={validator.getError("address")}
                                 value={validator.getValue("address")}
-                                onChange={async (e) => { await validator.handleChange(e); }}
-                                onBlur={async (e: any) => { await validator.handleBlur(e); }}
+                                onChange={async (e) => { await validator.onChange(e); }}
+                                onBlur={async (e: any) => { await validator.onBlur(e); }}
                                 name={"address"}
                                 label="Address"
                             />
@@ -87,8 +87,8 @@ const App: React.FC = () => {
                                 error={validator.hasError("email")}
                                 helperText={validator.getError("email")}
                                 value={validator.getValue("email")}
-                                onChange={async (e) => { await validator.handleChange(e); }}
-                                onBlur={async (e: any) => { await validator.handleBlur(e); }}
+                                onChange={async (e) => { await validator.onChange(e); }}
+                                onBlur={async (e: any) => { await validator.onBlur(e); }}
                                 name={"email"}
                                 label="Email"
                             />
@@ -101,8 +101,8 @@ const App: React.FC = () => {
                                         <Checkbox
                                             defaultChecked
                                             value={validator.getValue("isAwesome")}
-                                            onChange={async (e) => { await validator.handleChange(e); }}
-                                            onBlur={async (e: any) => { await validator.handleBlur(e); }}
+                                            onChange={async (e) => { await validator.onChange(e); }}
+                                            onBlur={async (e: any) => { await validator.onBlur(e); }}
                                         />
                                     }
                                     label="Is Awesome"/>
@@ -116,8 +116,8 @@ const App: React.FC = () => {
                                     error={validator.hasError("weight")}
                                     helperText={validator.getError("weight")}
                                     value={validator.getValue("weight")}
-                                    onChange={async (e) => { await validator.handleChange(e); }}
-                                    onBlur={async (e: any) => { await validator.handleBlur(e); }}
+                                    onChange={async (e) => { await validator.onChange(e); }}
+                                    onBlur={async (e: any) => { await validator.onBlur(e); }}
                                 />
                             </Grid>
                         </Grid>
@@ -147,7 +147,7 @@ const App: React.FC = () => {
                                     fullWidth
                                     variant={"contained"}
                                     color={"success"}
-                                    onClick={async (e: any) => {await validator.handleSubmit(e)}}
+                                    onClick={async (e: any) => {await validator.onSubmit(e)}}
                                 >
                                     Submit
                                 </Button>
