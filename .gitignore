@@ -5,6 +5,9 @@ package-lock.json
 # JetBrains
 .idea
 
+# VsCode
+.vscode
+
 # Logs
 logs
 *.log

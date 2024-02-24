@@ -37,9 +37,9 @@ export class FormValidator<T extends Object> {
 
         this._validateFlags = validateOn;
 
-        this._yupSchema = yupSchema;
-        this._defaults = {...defaults};
         this.values = {...defaults};
+        this._defaults = {...defaults};
+        this._yupSchema = yupSchema;
         this._submitCallback = submitCallback;
 
         this._keys = Object.keys(defaults) as Array<keyof T>;
@@ -69,10 +69,9 @@ export class FormValidator<T extends Object> {
         this.values[field] = value;
     }
 
-    resetForm() {
-        this.values = {...this._defaults};
+    reset() {
         for(let key of this._keys){
-            this.values[key] = this._defaults[key as keyof T]
+            this.setValue(key, this._defaults[key]);
             this.errors.set(key, "");
         }
     }
